@@ -28,8 +28,9 @@ logger = logging.getLogger(__name__)
  
 PREDICTION_LOG_FILE = "predictions_log.json"
  
-# Initialize Groq client (reads GROQ_API_KEY from .env automatically)
-groq_client = Groq()
+# Initialize Groq client only if key is available.
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
  
 # Load pre-trained model and preprocessing objects
 try:
@@ -302,6 +303,9 @@ def analyze():
     }
     """
     try:
+        if groq_client is None:
+            return jsonify({"error": "GROQ_API_KEY is not configured on the server"}), 503
+
         data = request.get_json()
         if not data:
             return jsonify({"error": "No JSON data provided"}), 400

@@ -171,7 +171,9 @@ jobs:
 
       - name: Run tests
         run: |
-          python -m pytest tests/ -v || true
+          python app.py &
+          sleep 5
+          python test_api.py
 
       - name: Build Docker image
         run: |

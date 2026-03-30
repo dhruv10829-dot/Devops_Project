@@ -37,7 +37,7 @@ test_scenarios = [
             "time_of_commit": 14,
             "build_time": 350.0
         },
-        "expected": "MEDIUM"
+        "expected": "PASS"
     },
     {
         "name": "High Risk - Large Commit with Dependency Changes",

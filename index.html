@@ -416,7 +416,7 @@
     <!-- Only Flask API URL needed — Groq key is in .env on the server -->
     <div class="config-row">
       <label>Flask API URL</label>
-      <input type="text" id="api_url" value="http://localhost:5000" placeholder="http://localhost:5000"/>
+      <input type="text" id="api_url" value="http://localhost:5050" placeholder="http://localhost:5050"/>
       <div class="config-hint">
         Make sure your Flask server is running · Groq key is configured in <code>.env</code> on the server
       </div>
@@ -546,7 +546,7 @@ async function runPrediction() {
     localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
  
   } catch (e) {
-    showError(e.message || 'Could not connect to Flask API. Make sure it is running on localhost:5000.');
+    showError(e.message || 'Could not connect to Flask API. Make sure it is running on localhost:5050.');
   } finally {
     btn.disabled = false;
     btn.innerHTML = '⚡ Run Prediction';

@@ -7,7 +7,7 @@ import requests
 import json
 import sys
 
-BASE_URL = "http://localhost:5000"
+BASE_URL = "http://localhost:5050"
 
 # Test data scenarios
 test_scenarios = [

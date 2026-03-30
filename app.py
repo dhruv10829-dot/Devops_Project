@@ -27,6 +27,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
  
 PREDICTION_LOG_FILE = "predictions_log.json"
+APP_PORT = int(os.getenv("PORT", "5050"))
  
 # Initialize Groq client only if key is available.
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -388,10 +389,10 @@ if __name__ == '__main__':
         print("  GET  /health           - Health check")
         print("  GET  /features         - Feature importance")
         print("  GET  /predictions-log  - View prediction history")
-        print("\nStarting server on http://0.0.0.0:5000")
+        print(f"\nStarting server on http://0.0.0.0:{APP_PORT}")
         print("=" * 60 + "\n")
  
-        app.run(host='0.0.0.0', port=5000, debug=False)
+        app.run(host='0.0.0.0', port=APP_PORT, debug=False)
     else:
         print("❌ Model failed to load. Cannot start API.")
  

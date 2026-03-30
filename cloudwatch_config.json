@@ -1,0 +1,43 @@
+{
+  "log_groups": {
+    "application": "/aws/ecs/ml-cicd-predictor",
+    "lambda": "/aws/lambda/ml-cicd-predictor",
+    "container_insights": "/aws/ecs/containerinsights/{cluster_name}/performance"
+  },
+  "log_retention_days": 7,
+  "metrics": {
+    "namespace": "ML/CICD/Predictor",
+    "dimensions": ["Service", "Environment"],
+    "default_metrics": [
+      "PredictionCount",
+      "PredictionLatency",
+      "FailureRate",
+      "CacheHitRate",
+      "ModelErrorRate"
+    ]
+  },
+  "alarms": {
+    "high_error_rate": {
+      "metric": "HTTPCode_ELB_5XX_Count",
+      "threshold": 10,
+      "comparison": "GreaterThanThreshold",
+      "period": 300,
+      "evaluation_periods": 2,
+      "treat_missing_data": "breaching"
+    },
+    "high_latency": {
+      "metric": "TargetResponseTime",
+      "threshold": 5,
+      "comparison": "GreaterThanThreshold",
+      "period": 300,
+      "evaluation_periods": 2
+    },
+    "low_health": {
+      "metric": "HTTPCode_Target_2XX_Count",
+      "threshold": 5,
+      "comparison": "LessThanThreshold",
+      "period": 60,
+      "evaluation_periods": 5
+    }
+  }
+}

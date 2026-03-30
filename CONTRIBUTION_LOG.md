@@ -19,3 +19,4 @@ This document tracks the cloud infrastructure additions to the ML CI/CD Predicto
 _Last updated: 2026-03-30_
 
 ### Commit 1: Kubernetes Deployment Added
+### Commit 2: Terraform AWS infrastructure configured

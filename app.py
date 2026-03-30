@@ -28,6 +28,33 @@ try:
 except Exception as e:
     logger.error(f"❌ Failed to load model: {e}")
     model = None
+    scaler = None
+    label_encoder = None
+    feature_names = []
+
+
+def encode_time_of_commit(value):
+    """Encode commit hour while accepting both numeric and string input."""
+    try:
+        hour = int(value)
+    except (TypeError, ValueError):
+        raise ValueError("time_of_commit must be an integer hour between 0 and 23")
+
+    if hour < 0 or hour > 23:
+        raise ValueError("time_of_commit must be between 0 and 23")
+
+    if label_encoder is None:
+        return hour
+
+    # Handle models trained with int classes as well as string classes.
+    for candidate in (hour, str(hour)):
+        try:
+            return int(label_encoder.transform([candidate])[0])
+        except Exception:
+            continue
+
+    # Fallback for pipelines trained directly on numeric hour.
+    return hour
 
 # ============ HEALTH CHECK ============
 @app.route('/health', methods=['GET'])
@@ -84,8 +111,7 @@ def predict():
         for feature in feature_names:
             value = data[feature]
             if feature == 'time_of_commit':
-                # Encode time_of_commit using the fitted label encoder
-                value = label_encoder.transform([value])[0]
+                value = encode_time_of_commit(value)
             input_data.append(value)
         
         # Create DataFrame with feature names
@@ -126,6 +152,8 @@ def predict():
         logger.info(f"Prediction: {prediction_label} (risk: {risk_level}, prob: {failure_prob:.4f})")
         return jsonify(response), 200
         
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except KeyError as e:
         return jsonify({"error": f"Invalid feature: {str(e)}"}), 400
     except Exception as e:
@@ -155,7 +183,7 @@ def predict_batch():
                 if value is None:
                     return jsonify({"error": f"Missing feature: {feature}"}), 400
                 if feature == 'time_of_commit':
-                    value = label_encoder.transform([value])[0]
+                    value = encode_time_of_commit(value)
                 input_data.append(value)
             
             # Predict
@@ -172,6 +200,8 @@ def predict_batch():
         
         return jsonify({"predictions": results}), 200
         
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         logger.error(f"Batch prediction error: {e}")
         return jsonify({"error": str(e)}), 500

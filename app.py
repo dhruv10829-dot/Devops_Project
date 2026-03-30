@@ -30,6 +30,10 @@ PREDICTION_LOG_FILE = "predictions_log.json"
  
 # Initialize Groq client (reads GROQ_API_KEY from .env automatically)
 groq_client = Groq()
+
+# Initialize Redis cache
+from redis_cache import get_cache
+cache = get_cache()
  
 # Load pre-trained model and preprocessing objects
 try:
@@ -127,16 +131,24 @@ def predict():
     """
     try:
         data = request.get_json()
- 
+
         if not data:
             return jsonify({"error": "No JSON data provided"}), 400
- 
+
         missing_features = [f for f in feature_names if f not in data]
         if missing_features:
             return jsonify({
                 "error": f"Missing features: {', '.join(missing_features)}"
             }), 400
- 
+
+        # Check cache first
+        cached_result = cache.get(data)
+        if cached_result:
+            cached_result["cached"] = True
+            cached_result["timestamp"] = datetime.now().isoformat()
+            logger.info(f"Returning cached prediction: {cached_result.get('prediction')}")
+            return jsonify(cached_result), 200
+
         input_data = []
         for feature in feature_names:
             value = data[feature]
@@ -170,9 +182,13 @@ def predict():
             "pass_probability": round(probability[0], 4),
             "confidence": round(confidence, 4),
             "recommendation": "🔴 STOP PIPELINE" if prediction == 1 else "🟢 CONTINUE PIPELINE",
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "cached": False
         }
- 
+
+        # Store in cache
+        cache.set(data, response, ttl=3600)
+
         try:
             append_prediction_log({
                 "endpoint": "/predict",
@@ -271,18 +287,42 @@ def predictions_log():
     try:
         if not os.path.exists(PREDICTION_LOG_FILE):
             return jsonify({"entries": [], "count": 0}), 200
- 
+
         with open(PREDICTION_LOG_FILE, 'r', encoding='utf-8') as f:
             entries = json.load(f)
- 
+
         if not isinstance(entries, list):
             entries = []
- 
+
         return jsonify({"entries": entries, "count": len(entries)}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
- 
- 
+
+
+# ============ CACHE STATS ============
+@app.route('/cache-stats', methods=['GET'])
+def cache_stats():
+    """Get Redis cache statistics."""
+    try:
+        stats = cache.get_stats()
+        return jsonify(stats), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/cache-clear', methods=['POST'])
+def cache_clear():
+    """Clear all prediction caches."""
+    try:
+        success = cache.clear_all()
+        if success:
+            return jsonify({"message": "Cache cleared successfully"}), 200
+        else:
+            return jsonify({"error": "Cache not available"}), 503
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # ============ GROQ AI ANALYSIS ============
 @app.route('/analyze', methods=['POST'])
 def analyze():
